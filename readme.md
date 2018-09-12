@@ -1,4 +1,4 @@
 # House-price-london
 
-A visulation project to check out london house price.
+A project designed to explore london house prices in 2018.
 
