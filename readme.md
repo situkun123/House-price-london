@@ -1,6 +1,6 @@
 # House-price-london
 
-_A project designed to explore london house prices in the first few month of 2018_ <br>
+_A project for exploring london house prices in 2018_ <br>
 
 
 ## Part1
