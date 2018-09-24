@@ -14,5 +14,5 @@ _A project for exploring london house prices in 2018_ <br>
 - Process the dataset to generate more insights (e.g. smoothing, secondary data calculation, etc.)
 - Use fbprophet to do some seasonality analysis, and trying to predict the average London flat price for the rest of 2018
 
-## Part2
+## Part3
 TBC
