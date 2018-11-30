@@ -16,7 +16,7 @@ _The inspriation is coming from my needs to buy a house_ <br>
 - Process the dataset to generate more insights (e.g. smoothing, secondary data calculation, etc.)
 - Use fbprophet to do some seasonality analysis, and trying to predict the average London flat price for the rest of 2018
 
-## Part3 (Brand new approach)
+## Brand new approach
 - Use Zoopla to scrape housing data
 - An simple API was built
 - All files are in package directory
