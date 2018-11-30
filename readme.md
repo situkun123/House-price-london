@@ -17,4 +17,6 @@ _The inspriation is coming from my needs to buy a house_ <br>
 ## Part3 (Brand new approach)
 - Use Zoopla to scrape housing data
 - An simple API was built
+- All files are in package directory
+- There is jupyter notebook to illustrate how these package can be used.
 
