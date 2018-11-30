@@ -3,6 +3,8 @@
 _A project for exploring london house prices in 2018_ <br>
 _The inspriation is coming from my needs to buy a house_ <br>
 
+![alt text]()
+
 ## Part1
 
 - Filter through the data from the UK house dataset.
