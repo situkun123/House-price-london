@@ -46,7 +46,7 @@ def update_entry_postcode(data, postcode):
     elif len(diff_property_id) != 0:
         newdata = data[data['property_id'].isin(diff_property_id)]
         newdata.to_sql(f'{postcode}', con=conn, if_exists='append')
-        print(f"{len(diff_property_id)} is added to tabel {postcode}")
+        print(f"{len(diff_property_id)} is added to table {postcode}")
         print(f"These are the property_id: {diff_property_id}")
     conn.commit()
     c.close()
@@ -146,10 +146,12 @@ district_postcode = [
        ('WC-head', 'WC1'), ('Strand', 'WC2')
       ]
 district_postcode_dict = dict(district_postcode)
+inver_district_postcode_dict = {b:a for a, b in district_postcode_dict.items()}
 first_run = list(district_postcode_dict.values())
 part1 = first_run[0:int(len(first_run)/3)]
 part2 = first_run[int(len(first_run)/3):int(len(first_run)*2/3)]
 part3 = first_run[int(len(first_run)*2/3):]
+testpart=first_run[:3]
 #############################################
 # Class to get tables from sql database
 
@@ -189,6 +191,7 @@ class zoopdatabase(object):
     @classmethod
     def PostcodeDailySTATS(clf, postcode):
         ''' Get historical mean & median stats table for a post code address
+
         '''
         df = clf.onetable2df(postcode.upper())
         def df_mean_med(para, df):
@@ -237,6 +240,9 @@ class zoopdatabase(object):
 
 
 class further_calculation(object):
+    def __init__(self):
+        return None
+        
     @classmethod
     def bedroom_stats_diff(clf, combine=True):
         data = zoopdatabase.onetable2df('bedroom_stats')
@@ -250,6 +256,7 @@ class further_calculation(object):
             return datadiff
         else:
             return datadiff, data
+
     @classmethod
     def get_growth(clf, postcode):
         data = further_calculation.bedroom_stats_diff(combine=True)
@@ -275,6 +282,7 @@ class further_calculation(object):
         data = data[data['postcode']==postcode.upper()]
         data.iloc[-1:, 7:] = np.nan
         return data
+
     @classmethod
     def cumlative_PriceCAL(clf, postcode, ptype='all'):
         '''ptype = {'all', '1', '2', 
@@ -288,15 +296,59 @@ class further_calculation(object):
         listedTime = df3['listed_time']
         if ptype == 'all':
             pass
-        elif ptype in [1,2,3,4]:
-            listedTime = df3[df3.bed_no == ptype]['listed_time']
-            df3 = df3[df3.bed_no==ptype]
-        elif ptype == 5:
-            listedTime = df3[df3.bed_no >= ptype]['listed_time']
-            df3 = df3[df3.bed_no>=ptype]
+        elif ptype in ['1','2','3','4']:
+            listedTime = df3[df3.bed_no == int(ptype)]['listed_time']
+            df3 = df3[df3.bed_no==int(ptype)]
+        elif ptype == '5':
+            listedTime = df3[df3.bed_no >= int(ptype)]['listed_time']
+            df3 = df3[df3.bed_no>=int(ptype)]
         else:
             print('This property type do not exist!')
         for i in listedTime:
             clum_price.append(df3[df3['listed_time']<= i]['price'].mean())
         df3['cuml_price'] = clum_price
         return df3
+
+################ Machine learning processing ##########
+class machine_learning(object):
+    def __init__(self, postcode):
+        self.postcode = postcode
+    
+    @classmethod
+    def median_fillna(clf, df):
+        '''Fillna by using median vaule of the number of bedroom 
+            :: For example: NaN value in 1 bed property will be filled in with median of 1 bed property
+        '''
+        for i in range(1,6):
+            if i != 5:
+                median = df[df['bed_no']==i]['price'].median()
+                df['price'] = df['price'].mask((df['price'].isnull()) & (df['bed_no']==i), 
+                                                median)
+            else:
+                median = df[df['bed_no']>=i]['price'].median()
+                df['price'] = df['price'].mask((df['price'].isnull()) & (df['bed_no']>=i),
+                                                 median)
+        return df
+    
+    def preprocessed_df(self):
+        ''' Preprocess df to be ready for machine leaarning
+            :: Sort property date by listed time
+            :: Rearrange datetime into YEAR, MONTH, DAY
+            :: One hot encoding 'first_station', 'second_station', 'property_type' columns
+        '''
+        df = zoopdatabase.onetable2df(self.postcode)
+        df=df.sort_values(by='listed_time')
+        df.drop(['index', 'property_id', 'address', 'agent'], axis=1, inplace=True)
+        subset = [i for i in df.columns if i !='price']
+        df.dropna(subset=subset, inplace=True)
+        df = self.median_fillna(df)
+        df_numerical = df.drop(['property_type','first_station', 'second_station'], axis=1)
+        df_dummy1 = pd.get_dummies(df['first_station'], prefix='first_station')
+        df_dummy2 = pd.get_dummies(df['second_station'], prefix='second_station')
+        df_dummy3 = pd.get_dummies(df['property_type'], prefix='property_type')
+        df = pd.concat([df_numerical, df_dummy3,df_dummy1,df_dummy2], axis=1)
+        df.insert(0, 'year', pd.DatetimeIndex(df['listed_time']).year)
+        df.insert(1, 'month',pd.DatetimeIndex(df['listed_time']).month)
+        df.insert(2, 'day', pd.DatetimeIndex(df['listed_time']).day)
+        df.drop('listed_time', axis=1, inplace=True)
+        return df
