@@ -22,3 +22,20 @@ _The inspriation is coming from my needs to buy a house_ <br>
 - All files are in package directory
 - There are jupyter notebook demonstrations to illustrate how these package can be used.
 
+## Covered areas
+```python
+district_postcode = [
+    ('Hackney', 'E8'), ('E-head', 'E1'), ('Bethal green', 'E2'), ('EC-head', 'EC1'), 
+    ('Bishopsgate', 'EC2'),('French chruch street', 'EC3'), ('Fleet strett', 'EC4'), 
+    ('N-head', 'N1'),  ('Highbury', 'N5'), ('Highgate', 'N6'), ('Finsbury park', 'N4'),
+     ('NW-head', 'NW1'),('Cricklewood', 'NW2'), ('Hampstead', 'NW3'), ('Kentish town', 'NW5'),
+       ('Kilburn', 'NW6'), ('St John wood', 'NW8'),('SE-Head', 'SE1'),
+      ('Greenwich', 'SE10'), ('SW-Head', 'SW1'), ('Chelsea', 'SW3'),
+       ('Clapham', 'SW4'), ('Earls court', 'SW5'),('Fulham', 'SW6'),
+       ('South kensington', 'SW7'), ('South lambeth', 'SW8'), ('Stockwell', 'SW9'),
+        ('West Brompton', 'SW10'), ('SW-head', 'SW11'), ('Paddington','W2'),
+      ('North Kensington', 'W10'), ('Notting hill', 'W11'), ('West Kensington', 'W14'),
+       ('WC-head', 'WC1'), ('Strand', 'WC2')
+      ]
+```
+
