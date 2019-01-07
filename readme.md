@@ -38,5 +38,17 @@ district_postcode = [
        ('WC-head', 'WC1'), ('Strand', 'WC2')
       ]
 ```
-## GUI (In development)
+## GUI for visualisation (In development)
+### Overview
+![](https://github.com/situkun123/House-price-london/blob/master/img/GUI_overview.png)
 
+### All listed price in NW5 (Kentish Town) against listed time 
+- 14-day moving average smoothing
+![](https://github.com/situkun123/House-price-london/blob/master/img/GUI_all_listPrice.png)
+
+### Average property price in different London region on a listed date
+![](https://github.com/situkun123/House-price-london/blob/master/img/GUI_daily_stats.png)
+
+### Cumulative average price of NW5 (Kentish Town) against listed time 
+- 4 day of moving average smoothing
+![](https://github.com/situkun123/House-price-london/blob/master/img/GUI_Cul_list_price.png)
