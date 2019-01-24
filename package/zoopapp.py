@@ -65,7 +65,7 @@ def property_type(i):
     result = re.findall('>(.*)</a>', ptype)[0]
     if (('flat' or 'duplex' or 'studio'or 'Studio'or 'maisonette') in result) == True:
         return 'flat'
-    elif ('Parking/garage' in result):
+    elif ('Parking/garage' in result) == True:
         return 'Other'
     else:
         return 'house'
