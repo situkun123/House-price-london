@@ -1,5 +1,7 @@
 import sys
 sys.path.append('situkun123/House-price-london/package')
+import os
+import pickle
 import pandas as pd
 import time
 from fake_useragent import UserAgent
@@ -21,6 +23,7 @@ def _url(postcode):
     out_url = f"https://www.zoopla.co.uk/for-sale/property/london/{postcode}/?page_size=100"
     return out_url
 
+
 # Get html content
 def call_zoopla(url, display_header = True):
     ua = UserAgent()
@@ -31,7 +34,6 @@ def call_zoopla(url, display_header = True):
         print(headers2)
     else: pass
     return soup
-
 
 # Data cleaning ######################
 def price(i):
@@ -65,10 +67,11 @@ def property_type(i):
     result = re.findall('>(.*)</a>', ptype)[0]
     if (('flat' or 'duplex' or 'studio'or 'Studio'or 'maisonette') in result) == True:
         return 'flat'
-    elif ('Parking/garage' in result) == True:
+    elif ('Parking/garage' or 'Room' in result) == True:
         return 'Other'
     else:
         return 'house'
+    
 
 def address(i):
     # start from 3
@@ -130,13 +133,33 @@ def url_generator(postcode):
     page_1 = _url(postcode)
     first_page = call_zoopla(page_1, display_header=False)
     search_no = str(first_page.findAll("span", {"class":"listing-results-utils-count"}))
-    search_result = int(re.findall('(\d+)</span>', search_no)[0])
+    # patched recently, now deal with , in 1,000
+    search_result = re.findall('(\d+,?\d+)', search_no)[0]
+    search_result = int(search_result.replace(',',''))
     pagenumber= math.ceil(search_result/100)
     suburl = first_page.findAll("div", {"class":"paginate bg-muted"})
     suburlone = re.findall('href="(.*)"', str(suburl))[0][0:-1]
     base_url = "https://www.zoopla.co.uk"
     urls = [f"{base_url}{suburlone}{i}&amp;page_size=100" for i in range(1,pagenumber+1)]
     return [urls, search_result]
+
+# testing Design for manchester
+def url_generator2():
+    page_1 = 'https://www.zoopla.co.uk/for-sale/property/manchester-city-centre/?page_size=100&pn=1'
+    first_page = call_zoopla(page_1, display_header=False)
+    search_no = str(first_page.findAll("span", {"class":"listing-results-utils-count"}))
+    # print(search_no)
+    # patched recently, now deal with , in 1,000
+    search_result = re.findall('(\d+,?\d+)</span>', search_no)[0]
+    search_result = int(search_result.replace(',',''))
+    # print(search_result)
+    pagenumber= math.ceil(search_result/100)
+    suburl = first_page.findAll("div", {"class":"paginate bg-muted"})
+    suburlone = re.findall('href="(.*)"', str(suburl))[0][0:-1]
+    base_url = "https://www.zoopla.co.uk/for-sale/property/manchester-city-centre/?page_size=100&pn="
+    urls = [f"{base_url}{i}" for i in range(1,pagenumber+1)]
+    return [urls, search_result]
+
 
 def process_data(url):
     ''' This function will conduct the whole process and produce a dataframe
@@ -146,6 +169,7 @@ def process_data(url):
     comb_data = combine_data(sep_data)
     return comb_data
 
+#multiprocessing
 def _compile_data(urls=None):
     '''Multiprocess for getting data '''
     data = []
@@ -154,17 +178,19 @@ def _compile_data(urls=None):
     elif len(urls) == 1:
         data = process_data(urls[0])
     elif type(urls) is str:
+        # used for single string url
         data = process_data(urls)
     elif len(urls) > 1 and type(urls) is not str:
         start = time.time()
-        pool = Pool(4)
+        pool = Pool(6)
         data = list(pool.imap(process_data, urls))
         data = [item for sublist in data for item in sublist]
         # time.sleep(round(random.uniform(1, 3),1))
-        print(f"Time taken: {round(time.time()-start, 2)} s")
         pool.close()
+        print(f"Time taken: {round(time.time()-start, 2)} s")
     return data
 
+#single process
 def compile_data(urls=None):
     ''' urls = [] or url = 'https://.....'
     '''
@@ -226,11 +252,11 @@ def bed_no_stats(data, postcode):
             elif a >= 5.0:
                 fiveplus.append(b); fiveplusc+=1
 
-        oneavg = round( (sum(one)/onec) if onec != 0 else 0, 0)
-        twoavg = round( (sum(two)/twoc) if twoc != 0 else 0, 0)  
-        threeavg = round( (sum(three)/threec) if threec != 0 else 0, 0)
-        fouravg = round( (sum(four)/fourc) if fourc != 0 else 0, 0)
-        fiveplusavg = round( (sum(fiveplus)/fiveplusc) if fiveplusc != 0 else 0, 0)
+        oneavg = round( (sum(one)/onec) if onec != 0 else 0, 0 )
+        twoavg = round( (sum(two)/twoc) if twoc != 0 else 0, 0 )  
+        threeavg = round( (sum(three)/threec) if threec != 0 else 0, 0 )
+        fouravg = round( (sum(four)/fourc) if fourc != 0 else 0, 0 )
+        fiveplusavg = round( (sum(fiveplus)/fiveplusc) if fiveplusc != 0 else 0, 0 )
 
     if len(one) == 0: one.append(0)
     if len(two) == 0: two.append(0)
@@ -255,11 +281,13 @@ class house_data(object):
                                 'first_station', 'second_station']
     def __init__(self, postcode):
         self.postcode = postcode.upper()
-        _url_gen = url_generator(postcode)
+        if self.postcode == 'M1': # This is for manchester
+            _url_gen = url_generator2()
+        else: 
+            _url_gen = url_generator(postcode)
         self.urls = _url_gen[0]
         self.listnumber = _url_gen[1]
         self.districtName = [i[0] for i in zsql.district_postcode if i[1] == postcode][0]
-        
         print(f"Currently updating {postcode}")
 
     @classmethod
@@ -268,9 +296,11 @@ class house_data(object):
         '''
         data = compile_data(urls=url)
         return pd.DataFrame(data, columns=clf.col_name)
+    
+    
 
     def get_data(self,as_pandas =True):
-        # get a combine dataset for a postcode area
+        '''get a combine dataset for a postcode area'''
         data = _compile_data(urls = self.urls)
         if as_pandas == False:
             return data
@@ -283,7 +313,7 @@ class house_data(object):
             self.datadf = df
             return df
 
-    def get_stats(self,):
+    def get_stats(self):
         '''Need to run  get_data first'''
         # phase 1, need to be improved a lot
         a = daily_stats(self.datadf, self.postcode)
@@ -320,5 +350,85 @@ class house_data(object):
         zsql.update_logs('daily_stats', search_time)
         zsql.update_logs('bedroom_stats', search_time)
         print(f'Table name: ### {self.postcode}--{self.districtName} ### is sucessfully updated to the daily_stats and bedroom_stats')
+
+    @classmethod
+    def zoop_stats(clf, postcode):
+        ''' returns 4 stats of a postal area:
+        1.average price paid
+        2.current price 
+        3.number of sale
+        4.price change
+        '''
+        ua = UserAgent()
+        headers2 = {'User-Agent':str(ua.random)}
+        url = f'https://www.zoopla.co.uk/house-prices/browse/london/{postcode}'
+        content = requests.get(url, headers=headers2, timeout=100).content
+        soup = BeautifulSoup(content, 'lxml')
+
+        #sub-function for formating 
+        def zoop_stats_format(content):
+            '''Use regex to format zoopla stats data from its analysis
+            '''
+            avg_price = re.findall('>(.*)</span>', str(content))[0]
+            avg_price = avg_price.replace(',','')
+            avg_price = avg_price.replace('£', '')
+            avg_price = int(avg_price)
+            return avg_price
         
+        zoop_avg_paid = soup.find_all("span", {"class": "market-panel-stat-element-value js-market-stats-average-price"})
+        zoop_avg_paid = zoop_stats_format(zoop_avg_paid)
+
+        zoop_avg_current = soup.find_all("span", {"class": "market-panel-stat-element-value js-market-stats-average-value"})
+        zoop_avg_current = zoop_stats_format(zoop_avg_current)
+
+        zoop_sale = soup.find_all("span", {"class": "market-panel-stat-element-value js-market-stats-num-sales"})
+        zoop_sale = zoop_stats_format(zoop_sale)
+
+        zoop_change = soup.find_all("span", {"class": "market-panel-stat-element-value js-market-stats-value-change market-panel-stat-value-change-up"})
+        if len(zoop_change)==0:
+            zoop_change = soup.find_all("span", {"class": "market-panel-stat-element-value js-market-stats-value-change market-panel-stat-value-change-down"})
+
+        zoop_change = zoop_stats_format(zoop_change)
+    
+        return [zoop_avg_paid, zoop_avg_current, zoop_sale, zoop_change]
+
+    ####### OFFLINE MODE##### USE FOR AWS Lambda ##########
+    def get_property_difference(self, as_pickle=True):  
+        '''save df contains the new property as pkl'''
+        data = self.datadf
+        search_time = datetime.datetime.today().strftime('%Y-%m-%d-%H-%M-%S')
+        old_property_id = list(pd.read_pickle('./pickle/property_id_all.pkl'))
+        new_property_id = list(data['property_id'])
+        diff_property_id = [i for i in new_property_id if i not in old_property_id]
+        diffdf = data[data['property_id'].isin(diff_property_id)]
+        if as_pickle == True:
+            path = f"./pickle/{self.postcode}.pkl"
+            if os.path.exists(path) == True:
+                diffdfold = pd.read_pickle(path)
+                diffdfnew = pd.concat([diffdfold, diffdf]).drop_duplicates().reset_index(drop=True)
+                diffdfnew.to_pickle(f"./pickle/{self.postcode}.pkl")
+            else:
+                diffdf.to_pickle(f"./pickle/{self.postcode}.pkl")
+        else:
+            pass
+        f = open("./pickle/update_time.txt", 'w')
+        f.write(f'Last {self.postcode} updated: {search_time}')
+        f.close()
+
+    
+# A utility class
+class utl(object):
+    def __init__(self):
+        self.timenow = datetime.datetime.today().strftime('%Y-%m-%d-%H-%M-%S')
         
+    def get_latest_property_id(self):
+        '''This will get all property id from the database and 
+            save as pickle file in  
+            - USE BEFORE OFFLINE UPDATES
+            - mainly used for machine learning modules'''
+        property_id_all = zsql.zoopdatabase.allpropertyTable()['property_id']
+        property_id_all.to_pickle("./pickle/property_id_all.pkl")
+        f = open("./pickle/update_time.txt", 'w')
+        f.write(f'Last property ID updated: {self.timenow}')
+        f.close()
+        print(f'file is saved in ./pickle/property_id_all.pkl at {self.timenow}')
