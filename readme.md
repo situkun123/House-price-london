@@ -40,20 +40,14 @@ district_postcode = [
 ```
 ## GUI for visualisation (In development)
 ### Overview
-![](https://github.com/situkun123/House-price-london/blob/master/img/GUI_overview2.png)
-latest update (2019-01-21)
-- Added three charts into the overview
-- Added a button that links the selected data to zoopla website
-- Live clock at the bottom of the page
-- Second page added for future development
+![](https://github.com/situkun123/House-price-london/blob/master/img/Main_window_GUI.png)
+latest update (2019-09-01)
+- Used PySide2 instead of Tkinter
+- Complete new design
+- Web browsing capability
+- 30-day moving average smoothing
 
-### All listed price in NW5 (Kentish Town) against listed time 
-- 14-day moving average smoothing
-![](https://github.com/situkun123/House-price-london/blob/master/img/GUI_all_listPrice.png)
+### Consolidated graph interface
+![](https://github.com/situkun123/House-price-london/blob/master/img/Graph_GUI.png)
+- All graphs are in one tab now.
 
-### Average property price in different London region on a listed date
-![](https://github.com/situkun123/House-price-london/blob/master/img/GUI_daily_stats.png)
-
-### Cumulative average price of NW5 (Kentish Town) against listed time 
-- 4 day of moving average smoothing
-![](https://github.com/situkun123/House-price-london/blob/master/img/GUI_Cul_list_price.png)
